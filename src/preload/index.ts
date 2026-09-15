@@ -32,6 +32,8 @@ const api = {
   revealFile: (id: string): Promise<void> => ipcRenderer.invoke(IpcChannels.revealFile, id),
   openInBambuStudio: (id: string): Promise<void> =>
     ipcRenderer.invoke(IpcChannels.openInBambuStudio, id),
+  renameFile: (id: string, newBaseName: string): Promise<void> =>
+    ipcRenderer.invoke(IpcChannels.renameFile, id, newBaseName),
 
   listTags: (): Promise<Tag[]> => ipcRenderer.invoke(IpcChannels.listTags),
   addTagToFile: (fileId: string, tagName: string): Promise<void> =>

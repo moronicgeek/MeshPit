@@ -1,5 +1,6 @@
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import fs from 'node:fs/promises'
+import path from 'node:path'
 import { IpcChannels } from '@shared/ipc'
 import type { DeleteFileOptions, LibraryQuery } from '@shared/types'
 import * as db from '../db/database'
@@ -96,6 +97,31 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(IpcChannels.revealFile, (_e, id: string) => {
     const file = db.getFileById(id)
     if (file) shell.showItemInFolder(file.path)
+  })
+
+  ipcMain.handle(IpcChannels.renameFile, async (_e, id: string, newBaseName: string) => {
+    const file = db.getFileById(id)
+    if (!file) throw new Error('File not found')
+
+    const trimmed = newBaseName.trim()
+    if (!trimmed) throw new Error('Name cannot be empty')
+    if (/[/\\]/.test(trimmed)) throw new Error('Name cannot contain path separators')
+
+    const dir = path.dirname(file.path)
+    const newName = `${trimmed}.${file.ext}`
+    const newPath = path.join(dir, newName)
+
+    if (newPath !== file.path) {
+      const exists = await fs.access(newPath).then(
+        () => true,
+        () => false
+      )
+      if (exists) throw new Error('A file with that name already exists')
+      await fs.rename(file.path, newPath)
+    }
+
+    db.renameFile(id, newPath, newName)
+    broadcastLibraryChanged()
   })
 
   ipcMain.handle(IpcChannels.openInBambuStudio, (_e, id: string) => {

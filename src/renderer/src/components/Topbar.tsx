@@ -1,3 +1,4 @@
+import type { Ref } from 'react'
 import type { LibraryQuery } from '../../../shared/types'
 import type { ActiveView } from '../hooks/useLibrary'
 
@@ -11,6 +12,7 @@ interface TopbarProps {
   onAddFolder: () => void
   onRescanAll: () => void
   resultCount: number
+  searchInputRef?: Ref<HTMLInputElement>
 }
 
 function viewTitle(view: ActiveView): string {
@@ -29,7 +31,8 @@ export function Topbar({
   onSortChange,
   onAddFolder,
   onRescanAll,
-  resultCount
+  resultCount,
+  searchInputRef
 }: TopbarProps): JSX.Element {
   return (
     <div className="topbar">
@@ -39,6 +42,7 @@ export function Topbar({
       </div>
       <div className="topbar-controls">
         <input
+          ref={searchInputRef}
           type="search"
           placeholder="Search files…"
           value={search}

@@ -35,6 +35,7 @@ export function useLibrary(): {
   renameCollection: (id: string, name: string) => Promise<void>
   deleteCollection: (id: string) => Promise<void>
   deleteTag: (id: string) => Promise<void>
+  renameFile: (id: string, newBaseName: string) => Promise<void>
 } {
   const [folders, setFolders] = useState<WatchedFolder[]>([])
   const [collections, setCollections] = useState<Collection[]>([])
@@ -156,6 +157,14 @@ export function useLibrary(): {
     [activeView, tags, refreshAll]
   )
 
+  const renameFile = useCallback(
+    async (id: string, newBaseName: string) => {
+      await window.meshpit.renameFile(id, newBaseName)
+      await refreshAll()
+    },
+    [refreshAll]
+  )
+
   const setSort = useCallback((by: LibraryQuery['sortBy'], dir: LibraryQuery['sortDir']) => {
     setSortBy(by)
     setSortDir(dir)
@@ -182,6 +191,7 @@ export function useLibrary(): {
     createCollection,
     renameCollection,
     deleteCollection,
-    deleteTag
+    deleteTag,
+    renameFile
   }
 }

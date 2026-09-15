@@ -12,6 +12,7 @@ export const IpcChannels = {
   deleteFiles: 'library:deleteFiles',
   revealFile: 'library:revealFile',
   openInBambuStudio: 'library:openInBambuStudio',
+  renameFile: 'library:renameFile',
 
   listTags: 'library:listTags',
   addTagToFile: 'library:addTagToFile',

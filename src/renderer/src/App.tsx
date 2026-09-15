@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Sidebar } from './components/Sidebar'
 import { Topbar } from './components/Topbar'
 import { Gallery } from './components/Gallery'
@@ -9,6 +9,7 @@ import { useLibrary } from './hooks/useLibrary'
 
 export default function App(): JSX.Element {
   const lib = useLibrary()
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [collectionPromptOpen, setCollectionPromptOpen] = useState(false)
@@ -22,16 +23,39 @@ export default function App(): JSX.Element {
   const [deleteTagConfirm, setDeleteTagConfirm] = useState<{ id: string; name: string } | null>(
     null
   )
+  const [renameCollectionTarget, setRenameCollectionTarget] = useState<{
+    id: string
+    name: string
+  } | null>(null)
+  const [renameFileTarget, setRenameFileTarget] = useState<{ id: string; baseName: string } | null>(
+    null
+  )
 
   const selectedFiles = useMemo(
     () => lib.files.filter((f) => selectedIds.has(f.id)),
     [lib.files, selectedIds]
   )
+  const [selectionAnchor, setSelectionAnchor] = useState<string | null>(null)
+  const [selectionFocus, setSelectionFocus] = useState<string | null>(null)
+  const galleryRef = useRef<HTMLDivElement>(null)
 
-  const handleSelect = (id: string, additive: boolean): void => {
+  const handleSelect = (id: string, modifiers: { shift: boolean; meta: boolean }): void => {
+    setSelectionFocus(id)
+    if (modifiers.shift && selectionAnchor) {
+      const ids = lib.files.map((f) => f.id)
+      const anchorIndex = ids.indexOf(selectionAnchor)
+      const clickedIndex = ids.indexOf(id)
+      if (anchorIndex !== -1 && clickedIndex !== -1) {
+        const [start, end] = anchorIndex < clickedIndex ? [anchorIndex, clickedIndex] : [clickedIndex, anchorIndex]
+        setSelectedIds(new Set(ids.slice(start, end + 1)))
+        return
+      }
+    }
+
+    setSelectionAnchor(id)
     setSelectedIds((prev) => {
-      const next = new Set(additive ? prev : [])
-      if (next.has(id) && additive) next.delete(id)
+      const next = new Set(modifiers.meta ? prev : [])
+      if (next.has(id) && modifiers.meta) next.delete(id)
       else next.add(id)
       return next
     })
@@ -68,10 +92,122 @@ export default function App(): JSX.Element {
     else void window.meshpit.addFilesToCollection(collectionId, fileIds)
   }
 
+  const handleRenameFileRequest = (file: { id: string; name: string; ext: string }): void => {
+    const baseName = file.name.replace(new RegExp(`\\.${file.ext}$`, 'i'), '')
+    setRenameFileTarget({ id: file.id, baseName })
+  }
+
+  const confirmRenameFile = async (newBaseName: string): Promise<void> => {
+    if (!renameFileTarget) return
+    try {
+      await lib.renameFile(renameFileTarget.id, newBaseName)
+      setRenameFileTarget(null)
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Failed to rename file')
+    }
+  }
+
+  useEffect(() => {
+    const handleSearchShortcut = (e: KeyboardEvent): void => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+        searchInputRef.current?.select()
+      }
+    }
+
+    window.addEventListener('keydown', handleSearchShortcut)
+    return () => window.removeEventListener('keydown', handleSearchShortcut)
+  }, [])
+
+  useEffect(() => {
+    const handleArrowNav = (e: KeyboardEvent): void => {
+      if (!(e.metaKey || e.ctrlKey)) return
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')
+        return
+      if (
+        settingsOpen ||
+        collectionPromptOpen ||
+        deleteConfirm ||
+        deleteCollectionConfirm ||
+        deleteTagConfirm ||
+        renameCollectionTarget ||
+        renameFileTarget
+      )
+        return
+
+      const target = e.target as HTMLElement | null
+      const isInput =
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      if (isInput) return
+
+      const ids = lib.files.map((f) => f.id)
+      if (ids.length === 0) return
+
+      e.preventDefault()
+
+      let columns = 1
+      const grid = galleryRef.current
+      if (grid) {
+        columns = window.getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length || 1
+      }
+
+      const delta =
+        e.key === 'ArrowLeft'
+          ? -1
+          : e.key === 'ArrowRight'
+            ? 1
+            : e.key === 'ArrowUp'
+              ? -columns
+              : columns
+
+      const focusId = selectionFocus ?? selectionAnchor ?? ids[0]
+      const currentIndex = Math.max(ids.indexOf(focusId), 0)
+      const nextIndex = Math.min(Math.max(currentIndex + delta, 0), ids.length - 1)
+      const nextId = ids[nextIndex]
+
+      const anchorId = selectionAnchor ?? focusId
+      if (!selectionAnchor) setSelectionAnchor(anchorId)
+      setSelectionFocus(nextId)
+
+      const anchorIndex = ids.indexOf(anchorId)
+      const [start, end] = anchorIndex < nextIndex ? [anchorIndex, nextIndex] : [nextIndex, anchorIndex]
+      setSelectedIds(new Set(ids.slice(start, end + 1)))
+
+      grid?.querySelector(`[data-file-id="${nextId}"]`)?.scrollIntoView({ block: 'nearest' })
+    }
+
+    window.addEventListener('keydown', handleArrowNav)
+    return () => window.removeEventListener('keydown', handleArrowNav)
+  }, [
+    lib.files,
+    selectionAnchor,
+    selectionFocus,
+    settingsOpen,
+    collectionPromptOpen,
+    deleteConfirm,
+    deleteCollectionConfirm,
+    deleteTagConfirm,
+    renameCollectionTarget,
+    renameFileTarget
+  ])
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
       if (selectedIds.size === 0) return
-      if (settingsOpen || collectionPromptOpen || deleteConfirm || deleteCollectionConfirm || deleteTagConfirm)
+      if (
+        settingsOpen ||
+        collectionPromptOpen ||
+        deleteConfirm ||
+        deleteCollectionConfirm ||
+        deleteTagConfirm ||
+        renameCollectionTarget ||
+        renameFileTarget
+      )
         return
 
       const target = e.target as HTMLElement | null
@@ -90,6 +226,9 @@ export default function App(): JSX.Element {
       } else if (!e.metaKey && !e.ctrlKey && (e.key === 'Backspace' || e.key === 'Delete')) {
         e.preventDefault()
         handleDeleteRequest(Array.from(selectedIds), false)
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'r' && selectedFiles.length === 1) {
+        e.preventDefault()
+        handleRenameFileRequest(selectedFiles[0])
       }
     }
 
@@ -97,11 +236,14 @@ export default function App(): JSX.Element {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [
     selectedIds,
+    selectedFiles,
     settingsOpen,
     collectionPromptOpen,
     deleteConfirm,
     deleteCollectionConfirm,
-    deleteTagConfirm
+    deleteTagConfirm,
+    renameCollectionTarget,
+    renameFileTarget
   ])
 
   return (
@@ -119,6 +261,10 @@ export default function App(): JSX.Element {
         onRemoveFolder={lib.removeFolder}
         onRescanFolder={lib.rescanFolder}
         onCreateCollection={() => setCollectionPromptOpen(true)}
+        onRenameCollection={(id) => {
+          const collection = lib.collections.find((c) => c.id === id)
+          setRenameCollectionTarget({ id, name: collection?.name ?? '' })
+        }}
         onDeleteCollection={(id) => {
           const collection = lib.collections.find((c) => c.id === id)
           setDeleteCollectionConfirm({ id, name: collection?.name ?? 'this collection' })
@@ -142,6 +288,7 @@ export default function App(): JSX.Element {
           onAddFolder={lib.addFolder}
           onRescanAll={lib.rescanAll}
           resultCount={lib.files.length}
+          searchInputRef={searchInputRef}
         />
         <Gallery
           files={lib.files}
@@ -149,6 +296,7 @@ export default function App(): JSX.Element {
           loading={lib.loading}
           onSelect={handleSelect}
           onOpenInBambu={handleOpenInBambu}
+          containerRef={galleryRef}
         />
       </main>
 
@@ -161,6 +309,7 @@ export default function App(): JSX.Element {
           onOpenInBambu={handleOpenInBambu}
           onReveal={handleReveal}
           onDelete={handleDeleteRequest}
+          onRenameFile={handleRenameFileRequest}
           onAddTag={handleAddTag}
           onRemoveTag={handleRemoveTag}
           onToggleCollection={handleToggleCollection}
@@ -178,6 +327,30 @@ export default function App(): JSX.Element {
             void lib.createCollection(name)
             setCollectionPromptOpen(false)
           }}
+        />
+      )}
+
+      {renameCollectionTarget && (
+        <PromptModal
+          title="Rename Collection"
+          defaultValue={renameCollectionTarget.name}
+          confirmLabel="Rename"
+          onCancel={() => setRenameCollectionTarget(null)}
+          onConfirm={(name) => {
+            void lib.renameCollection(renameCollectionTarget.id, name)
+            setRenameCollectionTarget(null)
+          }}
+        />
+      )}
+
+      {renameFileTarget && (
+        <PromptModal
+          title="Rename File"
+          message="The file will be renamed on disk. The file extension stays the same."
+          defaultValue={renameFileTarget.baseName}
+          confirmLabel="Rename"
+          onCancel={() => setRenameFileTarget(null)}
+          onConfirm={(name) => void confirmRenameFile(name)}
         />
       )}
 

@@ -10,6 +10,7 @@ interface DetailsDrawerProps {
   onOpenInBambu: (id: string) => void
   onReveal: (id: string) => void
   onDelete: (ids: string[], alsoFromDisk: boolean) => void
+  onRenameFile: (file: MeshFileRecord) => void
   onAddTag: (fileIds: string[], tag: string) => void
   onRemoveTag: (fileIds: string[], tag: string) => void
   onToggleCollection: (collectionId: string, fileIds: string[], currentlyAllIn: boolean) => void
@@ -23,6 +24,7 @@ export function DetailsDrawer({
   onOpenInBambu,
   onReveal,
   onDelete,
+  onRenameFile,
   onAddTag,
   onRemoveTag,
   onToggleCollection
@@ -191,6 +193,9 @@ export function DetailsDrawer({
             </button>
             <button className="btn" onClick={() => onReveal(primary.id)}>
               Reveal in Finder
+            </button>
+            <button className="btn" onClick={() => onRenameFile(primary)}>
+              Rename File
             </button>
           </>
         )}

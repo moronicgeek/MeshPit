@@ -206,6 +206,10 @@ export function getFileById(id: string): MeshFileRecord | null {
   return rowToFile(row)
 }
 
+export function renameFile(id: string, newPath: string, newName: string): void {
+  getDb().prepare('UPDATE files SET path = ?, name = ? WHERE id = ?').run(newPath, newName, id)
+}
+
 export function queryFiles(query: LibraryQuery): MeshFileRecord[] {
   const d = getDb()
   const clauses: string[] = ['f.missing = 0']

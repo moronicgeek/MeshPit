@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import type { Collection, Tag, WatchedFolder } from '../../../shared/types'
 import type { ActiveView } from '../hooks/useLibrary'
 
@@ -11,6 +12,7 @@ interface SidebarProps {
   onRemoveFolder: (id: string) => void
   onRescanFolder: (id: string) => void
   onCreateCollection: () => void
+  onRenameCollection: (id: string) => void
   onDeleteCollection: (id: string) => void
   onDeleteTag: (id: string) => void
   onOpenSettings: () => void
@@ -27,11 +29,27 @@ export function Sidebar({
   onRemoveFolder,
   onRescanFolder,
   onCreateCollection,
+  onRenameCollection,
   onDeleteCollection,
   onDeleteTag,
   onOpenSettings,
   totalCount
 }: SidebarProps): JSX.Element {
+  const [collectionMenu, setCollectionMenu] = useState<{ id: string; x: number; y: number } | null>(
+    null
+  )
+
+  useEffect(() => {
+    if (!collectionMenu) return
+    const close = (): void => setCollectionMenu(null)
+    window.addEventListener('click', close)
+    window.addEventListener('resize', close)
+    return () => {
+      window.removeEventListener('click', close)
+      window.removeEventListener('resize', close)
+    }
+  }, [collectionMenu])
+
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -97,6 +115,10 @@ export function Sidebar({
             className={`nav-item nested ${
               activeView.type === 'collection' && activeView.id === collection.id ? 'active' : ''
             }`}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              setCollectionMenu({ id: collection.id, x: e.clientX, y: e.clientY })
+            }}
           >
             <button
               className="nav-item-label"
@@ -115,6 +137,31 @@ export function Sidebar({
           </div>
         ))}
       </div>
+
+      {collectionMenu && (
+        <div
+          className="context-menu"
+          style={{ top: collectionMenu.y, left: collectionMenu.x }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => {
+              onRenameCollection(collectionMenu.id)
+              setCollectionMenu(null)
+            }}
+          >
+            Rename
+          </button>
+          <button
+            onClick={() => {
+              onDeleteCollection(collectionMenu.id)
+              setCollectionMenu(null)
+            }}
+          >
+            Delete
+          </button>
+        </div>
+      )}
 
       <div className="sidebar-section">
         <div className="sidebar-heading">

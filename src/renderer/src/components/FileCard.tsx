@@ -4,7 +4,7 @@ import { formatBytes, thumbnailUrl } from '../utils/format'
 interface FileCardProps {
   file: MeshFileRecord
   selected: boolean
-  onSelect: (id: string, additive: boolean) => void
+  onSelect: (id: string, modifiers: { shift: boolean; meta: boolean }) => void
   onOpenInBambu: (id: string) => void
 }
 
@@ -14,7 +14,8 @@ export function FileCard({ file, selected, onSelect, onOpenInBambu }: FileCardPr
   return (
     <div
       className={`file-card ${selected ? 'selected' : ''}`}
-      onClick={(e) => onSelect(file.id, e.metaKey || e.ctrlKey || e.shiftKey)}
+      data-file-id={file.id}
+      onClick={(e) => onSelect(file.id, { shift: e.shiftKey, meta: e.metaKey || e.ctrlKey })}
       onDoubleClick={() => onOpenInBambu(file.id)}
     >
       <div className="thumb">

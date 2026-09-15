@@ -611,6 +611,32 @@ input[type='search']:focus {
   background: var(--bg-3);
   color: var(--text-0);
 }
+.context-menu {
+  position: fixed;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  padding: 4px;
+  min-width: 140px;
+  z-index: 200;
+  -webkit-app-region: no-drag;
+}
+.context-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  color: var(--text-1);
+  font-size: 12.5px;
+}
+.context-menu button:hover {
+  background: var(--bg-3);
+  color: var(--text-0);
+}
 .collection-toggle {
   display: flex;
   align-items: center;
