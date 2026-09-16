@@ -68,7 +68,7 @@ app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.meshpit.app')
 
   app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
+    if (is.dev) optimizer.watchWindowShortcuts(window)
   })
 
   protocol.handle('meshpit-thumb', (request) => {
