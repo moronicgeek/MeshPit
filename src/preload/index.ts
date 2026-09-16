@@ -6,6 +6,8 @@ import type {
   DeleteFileOptions,
   LibraryQuery,
   MeshFileRecord,
+  MeshFileType,
+  StepMeshData,
   Tag,
   WatchedFolder
 } from '../shared/types'
@@ -27,6 +29,10 @@ const api = {
     ipcRenderer.invoke(IpcChannels.getFiles, query),
   getFile: (id: string): Promise<MeshFileRecord | null> =>
     ipcRenderer.invoke(IpcChannels.getFile, id),
+  readFileBuffer: (id: string): Promise<{ ext: MeshFileType; buffer: ArrayBuffer }> =>
+    ipcRenderer.invoke(IpcChannels.readFileBuffer, id),
+  triangulateStep: (id: string): Promise<StepMeshData[]> =>
+    ipcRenderer.invoke(IpcChannels.triangulateStep, id),
   deleteFiles: (options: DeleteFileOptions): Promise<void> =>
     ipcRenderer.invoke(IpcChannels.deleteFiles, options),
   findDuplicates: (): Promise<import('../shared/types').DuplicateFileGroup[]> =>

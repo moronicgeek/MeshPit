@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IpcChannels } from '../shared/ipc'
+import type { StepMeshData } from '../shared/types'
 
 export interface ThumbnailRenderRequest {
   id: string
@@ -15,6 +16,18 @@ export interface ThumbnailRenderResult {
   error?: string
 }
 
+export interface StepTriangulateRequest {
+  requestId: string
+  buffer: ArrayBuffer
+}
+
+export interface StepTriangulateResult {
+  requestId: string
+  success: boolean
+  meshes?: StepMeshData[]
+  error?: string
+}
+
 contextBridge.exposeInMainWorld('meshpitThumbnailHost', {
   onRenderRequest: (cb: (req: ThumbnailRenderRequest) => void): void => {
     ipcRenderer.on(IpcChannels.thumbnailRenderRequest, (_e, req: ThumbnailRenderRequest) =>
@@ -23,5 +36,11 @@ contextBridge.exposeInMainWorld('meshpitThumbnailHost', {
   },
   sendRenderResult: (result: ThumbnailRenderResult): void => {
     ipcRenderer.send(IpcChannels.thumbnailRenderResult, result)
+  },
+  onStepRequest: (cb: (req: StepTriangulateRequest) => void): void => {
+    ipcRenderer.on(IpcChannels.stepTriangulateRequest, (_e, req: StepTriangulateRequest) => cb(req))
+  },
+  sendStepResult: (result: StepTriangulateResult): void => {
+    ipcRenderer.send(IpcChannels.stepTriangulateResult, result)
   }
 })

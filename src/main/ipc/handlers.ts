@@ -6,8 +6,11 @@ import { IpcChannels } from '@shared/ipc'
 import type { DeleteFileOptions, DuplicateFileGroup, LibraryQuery, MeshFileRecord } from '@shared/types'
 import * as db from '../db/database'
 import { scanFolder, unwatchFolder, watchFolder } from '../indexer/indexer'
-import { enqueueThumbnailScan } from '../thumbnails/thumbnailManager'
+import { enqueueThumbnailScan, triangulateStepFile } from '../thumbnails/thumbnailManager'
 import { openInBambuStudio } from '../bambu/launcher'
+
+/** Guard against pulling a multi-gigabyte mesh into the renderer heap. */
+const MAX_VIEWER_FILE_BYTES = 512 * 1024 * 1024
 
 function broadcastLibraryChanged(): void {
   for (const win of BrowserWindow.getAllWindows()) {
@@ -90,6 +93,37 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(IpcChannels.getFiles, (_e, query: LibraryQuery) => db.queryFiles(query))
   ipcMain.handle(IpcChannels.getFile, (_e, id: string) => db.getFileById(id))
+
+  ipcMain.handle(IpcChannels.readFileBuffer, async (_e, id: string) => {
+    const file = db.getFileById(id)
+    if (!file) throw new Error('File not found')
+    const stat = await fs.stat(file.path)
+    if (stat.size > MAX_VIEWER_FILE_BYTES) {
+      throw new Error(
+        `File is too large to preview (${Math.round(stat.size / 1024 / 1024)} MB, limit ${MAX_VIEWER_FILE_BYTES / 1024 / 1024} MB)`
+      )
+    }
+    const content = await fs.readFile(file.path)
+    return {
+      ext: file.ext,
+      buffer: content.buffer.slice(content.byteOffset, content.byteOffset + content.byteLength)
+    }
+  })
+
+  ipcMain.handle(IpcChannels.triangulateStep, async (_e, id: string) => {
+    const file = db.getFileById(id)
+    if (!file) throw new Error('File not found')
+    const stat = await fs.stat(file.path)
+    if (stat.size > MAX_VIEWER_FILE_BYTES) {
+      throw new Error(
+        `File is too large to preview (${Math.round(stat.size / 1024 / 1024)} MB, limit ${MAX_VIEWER_FILE_BYTES / 1024 / 1024} MB)`
+      )
+    }
+    const content = await fs.readFile(file.path)
+    return triangulateStepFile(
+      content.buffer.slice(content.byteOffset, content.byteOffset + content.byteLength)
+    )
+  })
 
   ipcMain.handle(IpcChannels.deleteFiles, async (_e, options: DeleteFileOptions) => {
     if (options.alsoFromDisk) {

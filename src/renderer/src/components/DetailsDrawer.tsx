@@ -1,6 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Collection, MeshFileRecord, Tag } from '../../../shared/types'
 import { formatBytes, formatDate, thumbnailUrl } from '../utils/format'
+import { ModelViewer } from './ModelViewer'
+
+/** Above this size the 3D view waits for an explicit click instead of loading on selection. */
+const AUTO_VIEW_MAX_BYTES = 40 * 1024 * 1024
 
 interface DetailsDrawerProps {
   files: MeshFileRecord[]
@@ -31,9 +35,17 @@ export function DetailsDrawer({
 }: DetailsDrawerProps): JSX.Element {
   const [tagInput, setTagInput] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [show3D, setShow3D] = useState(false)
   const isSingle = files.length === 1
   const primary = files[0]
   const fileIds = files.map((f) => f.id)
+
+  // Small files open in 3D straight away; large ones stay on the thumbnail until asked for.
+  useEffect(() => {
+    setShow3D(
+      files.length === 1 && !files[0].missing && files[0].sizeBytes <= AUTO_VIEW_MAX_BYTES
+    )
+  }, [files.length, primary?.id, primary?.sizeBytes, primary?.missing])
 
   const tagCounts = new Map<string, number>()
   for (const file of files) {
@@ -72,12 +84,28 @@ export function DetailsDrawer({
       {isSingle ? (
         <>
           <div className="details-preview">
-            {thumbnailUrl(primary.thumbnailPath) ? (
-              <img src={thumbnailUrl(primary.thumbnailPath)!} alt={primary.name} />
+            {show3D ? (
+              <ModelViewer key={primary.id} file={primary} />
             ) : (
-              <div className="thumb-fallback large">{primary.ext.toUpperCase()}</div>
+              <>
+                {thumbnailUrl(primary.thumbnailPath) ? (
+                  <img src={thumbnailUrl(primary.thumbnailPath)!} alt={primary.name} />
+                ) : (
+                  <div className="thumb-fallback large">{primary.ext.toUpperCase()}</div>
+                )}
+                {!primary.missing && (
+                  <button className="preview-3d-btn" onClick={() => setShow3D(true)}>
+                    View in 3D
+                  </button>
+                )}
+              </>
             )}
           </div>
+          {show3D && (
+            <button className="preview-toggle-link" onClick={() => setShow3D(false)}>
+              Show thumbnail
+            </button>
+          )}
           <div className="details-info">
             <div className="details-row">
               <span>Path</span>

@@ -5,9 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="MeshPit is a desktop library for organizing and previewing 3D-printable files."
+      content="MeshPit is a desktop library for organizing and previewing 3D-printable files. Index the folders you already have, get real rendered thumbnails for every STL, OBJ, 3MF and STEP, and find any model in seconds."
     />
     <title>MeshPit | Your 3D Print Library</title>
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="MeshPit — a local library for every 3D-printable file on your machine" />
+    <meta
+      property="og:description"
+      content="Point it at a folder, walk away, and come back to a searchable, thumbnailed gallery. Nothing is imported, copied or moved."
+    />
+    <meta
+      property="og:image"
+      content="https://raw.githubusercontent.com/moronicgeek/MeshPit/main/docs/screenshots/gallery.png"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -51,12 +64,13 @@
       .nav-links a:hover { color: var(--rose); }
 
       .hero {
-        min-height: 640px;
         padding: 78px 0 56px;
         border-top: 1px solid var(--line);
         background-color: var(--paper);
       }
-      .hero-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 64px; }
+      /* minmax(0, …) everywhere: a bare 1fr floors at min-content, which lets wide
+         tables and long paths push the whole page past the viewport on narrow screens. */
+      .hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 64px; }
       .eyebrow, .platforms, .kicker {
         font-family: 'DM Mono', monospace;
         font-size: 12px;
@@ -64,6 +78,7 @@
         text-transform: uppercase;
       }
       .eyebrow { color: var(--rose); font-weight: 500; }
+      .kicker { color: var(--muted); }
       h1 { max-width: 650px; margin: 14px 0 20px; font-size: clamp(48px, 6vw, 78px); line-height: .96; letter-spacing: 0; }
       .hero-copy { max-width: 515px; color: var(--muted); font-size: 19px; line-height: 1.5; }
       .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
@@ -82,43 +97,136 @@
       .cube-stage::after { content: ''; position: absolute; width: 270px; height: 270px; border: 2px solid var(--violet); transform: rotate(-9deg); }
       .hero-icon { position: relative; z-index: 1; width: min(290px, 70vw); filter: drop-shadow(19px 22px 0 rgba(33,22,42,.16)); }
 
-      .features { padding: 96px 0; }
-      .section-title { max-width: 600px; margin: 0 0 46px; font-size: clamp(34px, 4vw, 50px); line-height: 1; }
-      .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); }
-      .feature { min-height: 245px; padding: 28px; background: var(--paper); border-right: 1px solid var(--line); }
-      .feature:last-child { border-right: 0; }
-      .feature-index { color: var(--rose); }
+      /* Shared section furniture */
+      .section { padding: 96px 0; }
+      .section.paper { background: var(--paper); border-block: 1px solid var(--line); }
+      .section-title { max-width: 640px; margin: 10px 0 46px; font-size: clamp(34px, 4vw, 50px); line-height: 1; }
+      .lede { max-width: 620px; margin: 0 0 18px; color: var(--muted); font-size: 18px; line-height: 1.55; }
+
+      /* Screenshots */
+      .shot-frame { margin: 0 0 34px; }
+      .shot {
+        display: block; width: 100%; height: auto;
+        border: 1px solid var(--ink);
+        box-shadow: 16px 18px 0 rgba(33,22,42,.14);
+      }
+      .shot-caption { margin: 18px 2px 0; color: var(--muted); font-size: 14px; }
+      .showcase { padding: 64px 0 96px; }
+
+      /* Why */
+      .why-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 64px; align-items: start; }
+      .why-grid p { color: var(--muted); font-size: 18px; line-height: 1.55; }
+      .why-grid p strong { color: var(--ink); font-weight: 600; }
+      .pull {
+        padding: 30px; background: var(--yellow); border: 1px solid var(--ink);
+        box-shadow: 12px 14px 0 rgba(33,22,42,.14);
+      }
+      .pull h3 { margin: 12px 0 10px; font-size: 26px; line-height: 1.1; }
+      .pull p { margin: 0; color: rgba(33,22,42,.78); font-size: 16px; line-height: 1.5; }
+
+      /* Features */
+      .feature-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); }
+      .feature { min-height: 245px; padding: 28px; background: var(--paper); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+      .feature:nth-child(3n) { border-right: 0; }
+      .feature:nth-last-child(-n+3) { border-bottom: 0; }
+      .feature-index { color: var(--rose); font-family: 'DM Mono', monospace; font-size: 12px; text-transform: uppercase; }
       .feature h3 { margin: 45px 0 10px; font-size: 22px; }
       .feature p { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.5; }
 
+      /* How it works — stepped pipeline */
+      .steps { border-top: 1px solid var(--line); }
+      .step {
+        display: grid; grid-template-columns: 124px minmax(0, 1fr) minmax(0, 1.15fr); gap: 36px;
+        padding: 40px 0; border-bottom: 1px solid var(--line);
+      }
+      .step-num { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--rose); padding-top: 6px; }
+      .step h3 { margin: 0 0 10px; font-size: 27px; line-height: 1.1; }
+      .step > div > p { margin: 0; color: var(--muted); font-size: 16.5px; line-height: 1.55; }
+      .step ul { margin: 0; padding: 0; list-style: none; }
+      .step li { position: relative; padding: 0 0 10px 20px; color: var(--muted); font-size: 16px; line-height: 1.5; }
+      .step li::before { content: ''; position: absolute; left: 0; top: 9px; width: 7px; height: 7px; background: var(--coral); }
+      .step li strong { color: var(--ink); font-weight: 600; }
+      code {
+        font-family: 'DM Mono', monospace; font-size: .89em;
+        background: rgba(68,39,97,.08); padding: 1px 5px; color: var(--violet);
+        overflow-wrap: anywhere;
+      }
+
+      /* Plain bordered table */
+      .table { width: 100%; border-collapse: collapse; border: 1px solid var(--line); background: var(--paper); }
+      .table th, .table td { text-align: left; padding: 15px 18px; border-bottom: 1px solid var(--line); font-size: 15.5px; line-height: 1.45; vertical-align: top; }
+      .table th { font-family: 'DM Mono', monospace; font-size: 11.5px; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+      .table tr:last-child td { border-bottom: 0; }
+      .table td:first-child { width: 38%; font-weight: 500; }
+
+      /* Format band */
       .format-band { padding: 56px 0; background: var(--violet); color: white; }
-      .format-grid { display: grid; grid-template-columns: 1fr auto; gap: 36px; align-items: center; }
+      .format-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 36px; align-items: center; }
+      .format-band .kicker { color: rgba(255,255,255,.66); }
       .format-band h2 { max-width: 560px; margin: 10px 0 0; font-size: clamp(30px, 4vw, 46px); line-height: 1.05; }
       .formats { display: flex; flex-wrap: wrap; justify-content: end; gap: 8px; }
       .formats span { padding: 8px 11px; border: 1px solid rgba(255,255,255,.45); font-family: 'DM Mono', monospace; font-size: 13px; }
 
+      /* Duplicates split */
+      .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 60px; align-items: center; }
+      .ol-steps { margin: 22px 0 0; padding: 0; list-style: none; counter-reset: s; }
+      .ol-steps li { counter-increment: s; position: relative; padding: 0 0 16px 40px; color: var(--muted); font-size: 16.5px; line-height: 1.5; }
+      .ol-steps li::before {
+        content: counter(s); position: absolute; left: 0; top: -1px;
+        width: 26px; height: 26px; display: grid; place-items: center;
+        border: 1px solid var(--ink); font-family: 'DM Mono', monospace; font-size: 13px; color: var(--ink);
+      }
+      .ol-steps li strong { color: var(--ink); font-weight: 600; }
+
+      /* Shortcuts */
+      .keys { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid var(--line); }
+      .key-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px 18px; background: var(--paper); border-bottom: 1px solid var(--line); }
+      .key-row:nth-child(odd) { border-right: 1px solid var(--line); }
+      .key-row:nth-last-child(-n+2) { border-bottom: 0; }
+      .key-row span { color: var(--muted); font-size: 15.5px; }
+      .key-combo { display: flex; gap: 4px; flex-shrink: 0; }
+      kbd {
+        font-family: 'DM Mono', monospace; font-size: 12.5px; color: var(--ink);
+        border: 1px solid var(--line); background: var(--cream); padding: 3px 7px; white-space: nowrap;
+      }
+
+      /* Download + footer */
       .download { padding: 95px 0; text-align: center; }
       .download .logo-lockup { justify-content: center; gap: 13px; }
       .download img { width: 44px; height: 44px; }
       .download h2 { margin: 22px 0 13px; font-size: clamp(37px, 5vw, 60px); line-height: 1; }
-      .download p { max-width: 470px; margin: 0 auto 27px; color: var(--muted); font-size: 17px; line-height: 1.5; }
+      .download p { max-width: 540px; margin: 0 auto 27px; color: var(--muted); font-size: 17px; line-height: 1.5; }
+      .built { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 40px; }
+      .built span { padding: 7px 11px; border: 1px solid var(--line); font-family: 'DM Mono', monospace; font-size: 12.5px; color: var(--muted); }
       footer { padding: 26px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
       footer .wrap { display: flex; justify-content: space-between; gap: 20px; }
 
+      @media (max-width: 900px) {
+        .step { grid-template-columns: 70px minmax(0, 1fr); gap: 24px; }
+        .step-num { grid-row: 1; }
+        .step ul, .step .table { grid-column: 2; }
+      }
+
       @media (max-width: 760px) {
         .nav-links { display: none; }
-        .hero { min-height: auto; padding-top: 58px; }
-        .hero-grid, .format-grid { grid-template-columns: 1fr; gap: 38px; }
+        .hero { padding-top: 58px; }
+        .hero-grid, .format-grid, .why-grid, .split { grid-template-columns: minmax(0, 1fr); gap: 38px; }
         .cube-stage { min-height: 275px; }
         .cube-stage::before { width: 230px; height: 230px; }
         .cube-stage::after { width: 185px; height: 185px; }
         .hero-icon { width: 210px; }
-        .features { padding: 70px 0; }
-        .feature-grid { grid-template-columns: 1fr; }
-        .feature { min-height: 190px; border-right: 0; border-bottom: 1px solid var(--line); }
+        .section { padding: 70px 0; }
+        .showcase { padding: 48px 0 70px; }
+        .feature-grid { grid-template-columns: minmax(0, 1fr); }
+        .feature { min-height: 190px; border-right: 0; }
         .feature:last-child { border-bottom: 0; }
         .feature h3 { margin-top: 28px; }
         .formats { justify-content: start; }
+        .keys { grid-template-columns: minmax(0, 1fr); }
+        .key-row:nth-child(odd) { border-right: 0; }
+        .key-row:nth-last-child(2) { border-bottom: 1px solid var(--line); }
+        .shot { box-shadow: 8px 10px 0 rgba(33,22,42,.14); }
+        .table td:first-child { width: 45%; }
         footer .wrap { flex-direction: column; }
       }
     </style>
@@ -131,6 +239,8 @@
       </a>
       <nav class="nav-links" aria-label="Main navigation">
         <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#duplicates">Duplicates</a>
         <a href="#download">Download</a>
         <a href="https://github.com/moronicgeek/MeshPit">GitHub</a>
       </nav>
@@ -142,12 +252,16 @@
           <div>
             <div class="eyebrow">Desktop library for 3D printing</div>
             <h1>Find the right model. Fast.</h1>
-            <p class="hero-copy">MeshPit keeps your printable models in one searchable, visual library. Index folders, preview geometry, and open files in Bambu Studio without leaving your flow.</p>
+            <p class="hero-copy">
+              MeshPit is a local library for every 3D-printable file on your machine. Point it at a
+              folder, walk away, and come back to a searchable, thumbnailed gallery — nothing
+              imported, copied or moved.
+            </p>
             <div class="actions">
               <a class="button primary" href="https://github.com/moronicgeek/MeshPit/releases">Download MeshPit</a>
               <a class="button secondary" href="https://github.com/moronicgeek/MeshPit">View on GitHub</a>
             </div>
-            <p class="platforms">macOS · Windows · Linux</p>
+            <p class="platforms">macOS · Windows · Linux · Free &amp; open source</p>
           </div>
           <div class="cube-stage" aria-hidden="true">
             <img class="hero-icon" src="https://raw.githubusercontent.com/moronicgeek/MeshPit/main/resources/icon.svg" alt="" />
@@ -155,7 +269,51 @@
         </div>
       </section>
 
-      <section class="features" id="features">
+      <section class="showcase">
+        <div class="wrap">
+          <figure class="shot-frame">
+            <img
+              class="shot"
+              src="screenshots/gallery.png"
+              alt="The MeshPit gallery showing a grid of rendered 3D model thumbnails, with folders, collections and tags in the sidebar"
+              loading="lazy"
+            />
+            <figcaption class="shot-caption">
+              Every model in your watched folders, rendered and searchable — not a list of filenames.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section paper">
+        <div class="wrap why-grid">
+          <div>
+            <div class="kicker">The problem</div>
+            <h2 class="section-title" style="margin-bottom: 24px">If you print, you hoard.</h2>
+            <p>
+              A few hundred downloads later your models are scattered across <code>Downloads</code>,
+              half of them are called <code>files.stl</code>, and the only way to find the one you
+              want is to open them in a slicer one at a time.
+            </p>
+            <p>
+              MeshPit indexes your models <strong>where they already live</strong>. It walks the
+              folders you choose, renders a preview of every model it finds, and puts the whole lot
+              behind a search box.
+            </p>
+          </div>
+          <div class="pull">
+            <div class="kicker" style="color: rgba(33,22,42,.6)">Non-negotiable</div>
+            <h3>Nothing gets moved.</h3>
+            <p>
+              No import step, no managed library folder, no copies eating your disk. Your folder
+              structure stays exactly as it is — MeshPit only keeps an index alongside it, and
+              deleting that index leaves every file untouched.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="features">
         <div class="wrap">
           <div class="kicker">A focused library, not another slicer</div>
           <h2 class="section-title">Everything you need to keep a growing model collection usable.</h2>
@@ -166,14 +324,29 @@
               <p>Index chosen folders in the background and scan a grid of generated 3D previews instead of filenames alone.</p>
             </article>
             <article class="feature">
-              <div class="feature-index">02 / ORGANIZE</div>
-              <h3>Tags and collections</h3>
-              <p>Group parts the way you think, then filter by tag, folder, or collection when it is time to print.</p>
+              <div class="feature-index">02 / PREVIEW</div>
+              <h3>Real previews</h3>
+              <p>Every STL, OBJ, 3MF and STEP is rendered to a thumbnail — including the full-colour plate preview your slicer embedded in a 3MF.</p>
             </article>
             <article class="feature">
-              <div class="feature-index">03 / MAKE</div>
-              <h3>Print-ready handoff</h3>
-              <p>Open a selected model in Bambu Studio directly from its details panel, with its original file right where it belongs.</p>
+              <div class="feature-index">03 / SEARCH</div>
+              <h3>Instant filtering</h3>
+              <p>Filter 10,000 files by name as you type, then sort by name, size, date added or date modified.</p>
+            </article>
+            <article class="feature">
+              <div class="feature-index">04 / ORGANIZE</div>
+              <h3>Tags and collections</h3>
+              <p>Freeform tags for “articulated”, “gift”, “petg”; collections for the projects you are actually building.</p>
+            </article>
+            <article class="feature">
+              <div class="feature-index">05 / CLEAN</div>
+              <h3>Duplicate finder</h3>
+              <p>Byte-for-byte duplicate detection via SHA-256, with the redundant copies pre-selected for a one-click cleanup.</p>
+            </article>
+            <article class="feature">
+              <div class="feature-index">06 / MAKE</div>
+              <h3>Straight to the slicer</h3>
+              <p>Double-click any model to open it in Bambu Studio — or whatever your system opens it with by default.</p>
             </article>
           </div>
         </div>
@@ -191,12 +364,208 @@
         </div>
       </section>
 
+      <section class="section" id="how">
+        <div class="wrap">
+          <div class="kicker">Under the hood</div>
+          <h2 class="section-title">Indexing you should never have to think about.</h2>
+          <p class="lede">
+            Here is what MeshPit is doing while you don’t — four stages, all of them off the
+            interface thread, so a 10,000-file scan never costs you a frame.
+          </p>
+
+          <div class="steps">
+            <div class="step">
+              <div class="step-num">01 / DISCOVERY</div>
+              <div>
+                <h3>The background walk</h3>
+                <p>
+                  Adding a folder spawns a dedicated worker thread to walk it recursively. The walk
+                  never touches the interface, and it deliberately plays nice with the rest of your
+                  machine.
+                </p>
+              </div>
+              <ul>
+                <li>Asks the OS for the <strong>lowest scheduling priority</strong> it can get</li>
+                <li><strong>Yields to the scheduler</strong> every 25 directory entries</li>
+                <li>Streams results back in <strong>batches of 50</strong>, so the gallery fills in as the scan runs</li>
+                <li><strong>Symlink loops</strong> are broken by resolving real paths and tracking visited directories</li>
+                <li>Hidden folders and <code>node_modules</code> are skipped</li>
+              </ul>
+            </div>
+
+            <div class="step">
+              <div class="step-num">02 / INDEX</div>
+              <div>
+                <h3>One small SQLite file</h3>
+                <p>
+                  Each file found becomes a row in a local database in WAL mode, so reads never
+                  block the scan. Rows are keyed on absolute path, which makes
+                  <strong>rescanning idempotent</strong> — a folder you have scanned a hundred times
+                  produces the same index every time.
+                </p>
+              </div>
+              <ul>
+                <li><strong>Path</strong> — opening, revealing, and de-duplicating</li>
+                <li><strong>Name and extension</strong> — search and the type badge on each card</li>
+                <li><strong>Size and modified time</strong> — sorting, and detecting edits</li>
+                <li><strong>Thumbnail path and status</strong> — the gallery grid</li>
+                <li><strong>Your tags and collections</strong> — never touched by a rescan</li>
+              </ul>
+            </div>
+
+            <div class="step">
+              <div class="step-num">03 / RENDER</div>
+              <div>
+                <h3>Thumbnails, rendered once and cached forever</h3>
+                <p>
+                  Pending thumbnails are queued and rendered one at a time in a hidden offscreen
+                  window, so GPU work can’t stutter the gallery you’re scrolling. Resolution is
+                  configurable at 160, 320 or 512 pixels.
+                </p>
+              </div>
+              <ul>
+                <li><strong>STL / OBJ</strong> — parsed with three.js, auto-framed, written out as a PNG</li>
+                <li><strong>3MF</strong> — the plate preview your slicer embedded is lifted straight out of the archive, which is why so many previews come out in full colour; if there isn’t one, the mesh is rendered instead</li>
+                <li><strong>STEP / STP</strong> — triangulated through OpenCascade compiled to WebAssembly, preserving per-solid colours</li>
+              </ul>
+            </div>
+
+            <div class="step">
+              <div class="step-num">04 / SYNC</div>
+              <div>
+                <h3>Staying in sync</h3>
+                <p>
+                  A file watcher keeps the index honest as your folders change underneath it, so the
+                  gallery reflects the disk without you asking it to.
+                </p>
+              </div>
+              <table class="table">
+                <tbody>
+                  <tr><td>A file appears in a watched folder</td><td>Picked up live and indexed immediately</td></tr>
+                  <tr><td>A file is modified</td><td>Size and mtime update; the thumbnail re-renders</td></tr>
+                  <tr><td>A file is deleted or moved away</td><td>Dropped from the index</td></tr>
+                  <tr><td>A file has vanished since the last scan</td><td>Flagged missing and hidden — tags and collections are kept in case the drive comes back</td></tr>
+                  <tr><td>You hit <strong>Rescan All</strong></td><td>Every watched folder is re-walked from scratch</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section paper" id="duplicates">
+        <div class="wrap split">
+          <div>
+            <div class="kicker">Duplicate finder</div>
+            <h2 class="section-title" style="margin-bottom: 18px">Certainty, not a filename guess.</h2>
+            <p class="lede" style="margin-bottom: 0">
+              A two-pass check, so it stays fast even on a library of tens of thousands of files.
+            </p>
+            <ol class="ol-steps">
+              <li><strong>Group by size in SQL.</strong> Files with a unique byte count can’t be duplicates, so they are never read from disk at all.</li>
+              <li><strong>Hash the survivors with SHA-256</strong> and group by digest, giving byte-for-byte certainty.</li>
+            </ol>
+            <p class="lede" style="margin-top: 6px">
+              You get one group per set of identical files, the first copy marked <em>Keep</em> and
+              the rest pre-ticked — so clearing out 53 redundant copies is a single click.
+            </p>
+          </div>
+          <figure class="shot-frame" style="margin-bottom: 0">
+            <img
+              class="shot"
+              src="screenshots/duplicates.png"
+              alt="The duplicate finder showing groups of identical files with redundant copies pre-selected for deletion"
+              loading="lazy"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="wrap">
+          <div class="kicker">A look around</div>
+          <h2 class="section-title">Built for picking one model out of thousands.</h2>
+
+          <figure class="shot-frame">
+            <img
+              class="shot"
+              src="screenshots/details.png"
+              alt="A model selected in the gallery with the details panel open on the right, showing its preview, path, size, dates, tags and collections"
+              loading="lazy"
+            />
+            <figcaption class="shot-caption">
+              <strong>Details panel</strong> — preview, full path, size and dates, tags, collections,
+              and one-click actions for opening, revealing and renaming.
+            </figcaption>
+          </figure>
+
+          <figure class="shot-frame" style="margin-bottom: 0">
+            <img
+              class="shot"
+              src="screenshots/collection.png"
+              alt="The MeshPit gallery filtered down to the models in a single collection"
+              loading="lazy"
+            />
+            <figcaption class="shot-caption">
+              <strong>Collections</strong> — group models by project, and let a file live in as many
+              of them as you like.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section paper">
+        <div class="wrap">
+          <div class="kicker">Keyboard first</div>
+          <h2 class="section-title">Never reach for the mouse.</h2>
+          <div class="keys">
+            <div class="key-row"><span>Jump to search</span><span class="key-combo"><kbd>⌘ / Ctrl</kbd><kbd>F</kbd></span></div>
+            <div class="key-row"><span>Move and extend the selection</span><span class="key-combo"><kbd>⌘ / Ctrl</kbd><kbd>↑ ↓ ← →</kbd></span></div>
+            <div class="key-row"><span>Select a range</span><span class="key-combo"><kbd>Shift</kbd><kbd>click</kbd></span></div>
+            <div class="key-row"><span>Add or remove one file</span><span class="key-combo"><kbd>⌘ / Ctrl</kbd><kbd>click</kbd></span></div>
+            <div class="key-row"><span>Open in Bambu Studio</span><span class="key-combo"><kbd>double-click</kbd></span></div>
+            <div class="key-row"><span>Rename the selected file on disk</span><span class="key-combo"><kbd>⌘ / Ctrl</kbd><kbd>R</kbd></span></div>
+            <div class="key-row"><span>Remove from library, keep on disk</span><span class="key-combo"><kbd>⌫</kbd></span></div>
+            <div class="key-row"><span>Delete from disk, with confirmation</span><span class="key-combo"><kbd>⌘ / Ctrl</kbd><kbd>⌫</kbd></span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="wrap split">
+          <div>
+            <div class="kicker">Local by default</div>
+            <h2 class="section-title" style="margin-bottom: 18px">Your library never leaves the machine.</h2>
+            <p class="lede">
+              There is no account, no sync service and no telemetry. MeshPit’s entire state is one
+              database file plus a folder of cached thumbnails. Delete it and you are back to a clean
+              install, with every model still exactly where it was.
+            </p>
+          </div>
+          <table class="table">
+            <thead><tr><th>Platform</th><th>State lives in</th></tr></thead>
+            <tbody>
+              <tr><td>macOS</td><td><code>~/Library/Application Support/MeshPit/</code></td></tr>
+              <tr><td>Windows</td><td><code>%APPDATA%\MeshPit\</code></td></tr>
+              <tr><td>Linux</td><td><code>~/.config/MeshPit/</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <section class="download" id="download">
         <div class="wrap">
           <div class="logo-lockup"><img src="https://raw.githubusercontent.com/moronicgeek/MeshPit/main/resources/icon.svg" alt="" /><strong>MeshPit</strong></div>
           <h2>Start digging through your library.</h2>
-          <p>Download the latest release for your platform, choose a folder, and let MeshPit build your visual index.</p>
+          <p>
+            Download the latest release, point it at a folder, and let MeshPit build your visual
+            index while you get on with something else.
+          </p>
           <a class="button primary" href="https://github.com/moronicgeek/MeshPit/releases">Get the latest release</a>
+          <div class="built" aria-label="Built with">
+            <span>Electron</span><span>React</span><span>TypeScript</span><span>three.js</span>
+            <span>better-sqlite3</span><span>occt-import-js</span><span>chokidar</span>
+          </div>
         </div>
       </section>
     </main>

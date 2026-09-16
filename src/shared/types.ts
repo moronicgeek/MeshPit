@@ -69,3 +69,11 @@ export interface DuplicateFileGroup {
   hash: string
   files: MeshFileRecord[]
 }
+
+/** One triangulated solid from a STEP file, shipped to the viewer as typed arrays. */
+export interface StepMeshData {
+  position: Float32Array
+  normal: Float32Array | null
+  index: Uint32Array
+  color: [number, number, number] | null
+}

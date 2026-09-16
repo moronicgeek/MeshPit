@@ -9,6 +9,7 @@ export const IpcChannels = {
 
   getFiles: 'library:getFiles',
   getFile: 'library:getFile',
+  readFileBuffer: 'library:readFileBuffer',
   deleteFiles: 'library:deleteFiles',
   findDuplicates: 'library:findDuplicates',
   revealFile: 'library:revealFile',
@@ -40,5 +41,12 @@ export const IpcChannels = {
 
   // thumbnail render host <-> main process
   thumbnailRenderRequest: 'thumbnail:renderRequest',
-  thumbnailRenderResult: 'thumbnail:renderResult'
+  thumbnailRenderResult: 'thumbnail:renderResult',
+
+  // STEP triangulation runs in the offscreen host, whose window has no CSP.
+  // OpenCascade's embind glue builds invokers with new Function(), which the
+  // main window's script-src deliberately forbids.
+  triangulateStep: 'library:triangulateStep',
+  stepTriangulateRequest: 'step:triangulateRequest',
+  stepTriangulateResult: 'step:triangulateResult'
 } as const

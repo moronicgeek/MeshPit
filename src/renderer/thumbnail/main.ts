@@ -1,16 +1,22 @@
 import * as THREE from 'three'
-import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js'
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
-import { ThreeMFLoader } from 'three/examples/jsm/loaders/3MFLoader.js'
 import * as fflate from 'fflate'
-import occtimportjs from 'occt-import-js'
-import occtWasmUrl from 'occt-import-js/dist/occt-import-js.wasm?url'
+import { buildMeshObject } from '../src/three/meshLoader'
+import { buildStepObject } from '../src/three/stepGeometry'
+import { triangulateStep } from './occt'
+import type { StepMeshData } from '../../shared/types'
 
 declare global {
   interface Window {
     meshpitThumbnailHost: {
       onRenderRequest: (cb: (req: { id: string; ext: string; size: number; buffer: ArrayBuffer }) => void) => void
       sendRenderResult: (result: { id: string; success: boolean; dataUrl?: string; error?: string }) => void
+      onStepRequest: (cb: (req: { requestId: string; buffer: ArrayBuffer }) => void) => void
+      sendStepResult: (result: {
+        requestId: string
+        success: boolean
+        meshes?: StepMeshData[]
+        error?: string
+      }) => void
     }
   }
 }
@@ -42,11 +48,6 @@ const material = new THREE.MeshStandardMaterial({
   metalness: 0.1,
   roughness: 0.55
 })
-
-const stlLoader = new STLLoader()
-const objLoader = new OBJLoader()
-const threeMfLoader = new ThreeMFLoader()
-const occtImporter = occtimportjs({ locateFile: () => occtWasmUrl })
 
 let currentMesh: THREE.Object3D | null = null
 
@@ -132,60 +133,6 @@ function frameObject(object: THREE.Object3D): void {
   camera.lookAt(0, 0, 0)
 }
 
-async function buildObjectFromGeometry(ext: string, buffer: ArrayBuffer): Promise<THREE.Object3D> {
-  if (ext === 'stl') {
-    const geometry = stlLoader.parse(buffer)
-    geometry.computeVertexNormals()
-    return new THREE.Mesh(geometry, material)
-  }
-  if (ext === 'obj') {
-    const text = new TextDecoder().decode(buffer)
-    const group = objLoader.parse(text)
-    group.traverse((child) => {
-      if (child instanceof THREE.Mesh) child.material = material
-    })
-    return group
-  }
-  if (ext === '3mf') {
-    const group = threeMfLoader.parse(buffer)
-    group.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        if (!child.material || (Array.isArray(child.material) && child.material.length === 0)) {
-          child.material = material
-        }
-      }
-    })
-    return group
-  }
-  if (ext === 'step') {
-    const result = (await occtImporter).ReadStepFile(new Uint8Array(buffer), {
-      linearUnit: 'millimeter',
-      linearDeflectionType: 'bounding_box_ratio',
-      linearDeflection: 0.001,
-      angularDeflection: 0.5
-    })
-    if (!result.success || result.meshes.length === 0) throw new Error('Could not triangulate STEP file')
-
-    const group = new THREE.Group()
-    for (const mesh of result.meshes) {
-      const geometry = new THREE.BufferGeometry()
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(mesh.attributes.position.array, 3))
-      if (mesh.attributes.normal) {
-        geometry.setAttribute('normal', new THREE.Float32BufferAttribute(mesh.attributes.normal.array, 3))
-      } else {
-        geometry.computeVertexNormals()
-      }
-      geometry.setIndex(mesh.index.array)
-      const meshMaterial = mesh.color
-        ? material.clone()
-        : material
-      if (mesh.color) meshMaterial.color.setRGB(mesh.color[0], mesh.color[1], mesh.color[2])
-      group.add(new THREE.Mesh(geometry, meshMaterial))
-    }
-    return group
-  }
-  throw new Error(`Unsupported extension: ${ext}`)
-}
 
 window.meshpitThumbnailHost.onRenderRequest(async ({ id, ext, size, buffer }) => {
   try {
@@ -202,7 +149,10 @@ window.meshpitThumbnailHost.onRenderRequest(async ({ id, ext, size, buffer }) =>
       }
     }
 
-    const object = await buildObjectFromGeometry(ext, buffer)
+    const object =
+      ext === 'step'
+        ? buildStepObject(await triangulateStep(buffer), material)
+        : await buildMeshObject(ext, buffer, material)
     scene.add(object)
     currentMesh = object
     frameObject(object)
@@ -215,5 +165,21 @@ window.meshpitThumbnailHost.onRenderRequest(async ({ id, ext, size, buffer }) =>
     window.meshpitThumbnailHost.sendRenderResult({ id, success: false, error: String(error) })
   } finally {
     clearMesh()
+  }
+})
+
+// Triangulation-only service for the main window's 3D viewer: no rendering here,
+// just geometry handed back over IPC.
+window.meshpitThumbnailHost.onStepRequest(async ({ requestId, buffer }) => {
+  try {
+    const meshes = await triangulateStep(buffer)
+    window.meshpitThumbnailHost.sendStepResult({ requestId, success: true, meshes })
+  } catch (error) {
+    console.error('[MeshPit] STEP triangulation failed:', error)
+    window.meshpitThumbnailHost.sendStepResult({
+      requestId,
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    })
   }
 })

@@ -4,6 +4,7 @@ import fs from 'node:fs/promises'
 import { app } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import { IpcChannels } from '@shared/ipc'
+import type { StepMeshData } from '@shared/types'
 import { getPendingThumbnailFiles, resetFailedThumbnails, setThumbnail, getSettings } from '../db/database'
 
 interface QueueItem {
@@ -12,10 +13,21 @@ interface QueueItem {
   ext: string
 }
 
+interface PendingStepRequest {
+  resolve: (meshes: StepMeshData[]) => void
+  reject: (error: Error) => void
+  timer: NodeJS.Timeout
+}
+
+/** A large assembly can take a while to triangulate; give up rather than hang the viewer. */
+const STEP_TIMEOUT_MS = 120_000
+
 let hostWindow: BrowserWindow | null = null
 let processing = false
 const queue: QueueItem[] = []
 let onUpdated: (() => void) | null = null
+const pendingStepRequests = new Map<string, PendingStepRequest>()
+let stepRequestCounter = 0
 
 function thumbnailsDir(): string {
   const dir = path.join(app.getPath('userData'), 'thumbnails')
@@ -52,10 +64,35 @@ async function ensureHostWindow(): Promise<BrowserWindow> {
 export function cleanupThumbnailManager(): void {
   queue.length = 0
   processing = false
+  for (const pending of pendingStepRequests.values()) {
+    clearTimeout(pending.timer)
+    pending.reject(new Error('Shutting down'))
+  }
+  pendingStepRequests.clear()
   if (hostWindow && !hostWindow.isDestroyed()) {
     hostWindow.destroy()
     hostWindow = null
   }
+}
+
+/**
+ * Triangulates a STEP file in the offscreen host window. That window has no CSP,
+ * which OpenCascade's embind glue requires (it builds invokers via new Function);
+ * the main window forbids that on purpose, so only geometry crosses back.
+ */
+export async function triangulateStepFile(buffer: ArrayBuffer): Promise<StepMeshData[]> {
+  const win = await ensureHostWindow()
+  const requestId = `step-${++stepRequestCounter}`
+
+  return new Promise<StepMeshData[]>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      pendingStepRequests.delete(requestId)
+      reject(new Error('Timed out triangulating STEP file'))
+    }, STEP_TIMEOUT_MS)
+
+    pendingStepRequests.set(requestId, { resolve, reject, timer })
+    win.webContents.send(IpcChannels.stepTriangulateRequest, { requestId, buffer })
+  })
 }
 
 export function initThumbnailManager(onLibraryChanged: () => void): void {
@@ -78,6 +115,23 @@ export function initThumbnailManager(onLibraryChanged: () => void): void {
     onUpdated?.()
     processing = false
     processNext()
+  })
+
+  ipcMain.on(IpcChannels.stepTriangulateResult, (_event, result: {
+    requestId: string
+    success: boolean
+    meshes?: StepMeshData[]
+    error?: string
+  }) => {
+    const pending = pendingStepRequests.get(result.requestId)
+    if (!pending) return
+    clearTimeout(pending.timer)
+    pendingStepRequests.delete(result.requestId)
+    if (result.success && result.meshes) {
+      pending.resolve(result.meshes)
+    } else {
+      pending.reject(new Error(result.error ?? 'Could not triangulate STEP file'))
+    }
   })
 }
 
