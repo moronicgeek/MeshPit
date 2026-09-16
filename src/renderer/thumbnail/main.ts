@@ -8,6 +8,7 @@ import type { StepMeshData } from '../../shared/types'
 declare global {
   interface Window {
     meshpitThumbnailHost: {
+      sendReady: () => void
       onRenderRequest: (cb: (req: { id: string; ext: string; size: number; buffer: ArrayBuffer }) => void) => void
       sendRenderResult: (result: { id: string; success: boolean; dataUrl?: string; error?: string }) => void
       onStepRequest: (cb: (req: { requestId: string; buffer: ArrayBuffer }) => void) => void
@@ -183,3 +184,6 @@ window.meshpitThumbnailHost.onStepRequest(async ({ requestId, buffer }) => {
     })
   }
 })
+
+// Both listeners are attached now, so it is safe for the main process to send.
+window.meshpitThumbnailHost.sendReady()

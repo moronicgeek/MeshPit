@@ -29,6 +29,9 @@ export interface StepTriangulateResult {
 }
 
 contextBridge.exposeInMainWorld('meshpitThumbnailHost', {
+  sendReady: (): void => {
+    ipcRenderer.send(IpcChannels.hostReady)
+  },
   onRenderRequest: (cb: (req: ThumbnailRenderRequest) => void): void => {
     ipcRenderer.on(IpcChannels.thumbnailRenderRequest, (_e, req: ThumbnailRenderRequest) =>
       cb(req)

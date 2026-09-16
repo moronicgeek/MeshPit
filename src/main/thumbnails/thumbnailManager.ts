@@ -21,6 +21,7 @@ interface PendingStepRequest {
 
 /** A large assembly can take a while to triangulate; give up rather than hang the viewer. */
 const STEP_TIMEOUT_MS = 120_000
+const HOST_READY_TIMEOUT_MS = 30_000
 
 let hostWindow: BrowserWindow | null = null
 let processing = false
@@ -28,6 +29,8 @@ const queue: QueueItem[] = []
 let onUpdated: (() => void) | null = null
 const pendingStepRequests = new Map<string, PendingStepRequest>()
 let stepRequestCounter = 0
+let hostReady: Promise<void> | null = null
+let resolveHostReady: (() => void) | null = null
 
 function thumbnailsDir(): string {
   const dir = path.join(app.getPath('userData'), 'thumbnails')
@@ -35,7 +38,14 @@ function thumbnailsDir(): string {
 }
 
 async function ensureHostWindow(): Promise<BrowserWindow> {
-  if (hostWindow && !hostWindow.isDestroyed()) return hostWindow
+  if (hostWindow && !hostWindow.isDestroyed() && hostReady) {
+    await hostReady
+    return hostWindow
+  }
+
+  hostReady = new Promise<void>((resolve) => {
+    resolveHostReady = resolve
+  })
 
   hostWindow = new BrowserWindow({
     show: false,
@@ -51,6 +61,8 @@ async function ensureHostWindow(): Promise<BrowserWindow> {
 
   hostWindow.on('closed', () => {
     hostWindow = null
+    hostReady = null
+    resolveHostReady = null
   })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
@@ -58,6 +70,17 @@ async function ensureHostWindow(): Promise<BrowserWindow> {
   } else {
     await hostWindow.loadFile(path.join(__dirname, '../renderer/thumbnail.html'))
   }
+
+  // loadURL resolves before the page's modules have run, so wait for the host to
+  // say its IPC listeners are attached. Time-boxed so a broken host surfaces as
+  // an error instead of hanging every caller forever.
+  await Promise.race([
+    hostReady,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Thumbnail host failed to start')), HOST_READY_TIMEOUT_MS)
+    )
+  ])
+
   return hostWindow
 }
 
@@ -115,6 +138,10 @@ export function initThumbnailManager(onLibraryChanged: () => void): void {
     onUpdated?.()
     processing = false
     processNext()
+  })
+
+  ipcMain.on(IpcChannels.hostReady, () => {
+    resolveHostReady?.()
   })
 
   ipcMain.on(IpcChannels.stepTriangulateResult, (_event, result: {

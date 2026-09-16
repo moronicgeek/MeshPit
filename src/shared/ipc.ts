@@ -40,6 +40,10 @@ export const IpcChannels = {
   onLibraryChanged: 'library:onLibraryChanged',
 
   // thumbnail render host <-> main process
+  // hostReady matters: webContents.send silently drops messages sent before the
+  // host renderer has attached its listeners, and loadURL resolves well before
+  // its module graph has executed.
+  hostReady: 'thumbnail:hostReady',
   thumbnailRenderRequest: 'thumbnail:renderRequest',
   thumbnailRenderResult: 'thumbnail:renderResult',
 
