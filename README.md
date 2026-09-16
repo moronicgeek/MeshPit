@@ -1,5 +1,7 @@
+<p align="center">
+<img src="meshpit.svg" width="200"/>
+</p>
 
-![alt](meshpit.svg)
 # MeshPit
 MeshPit is a cross-platform (macOS, Windows, Linux) desktop app for managing your library of
 3D-printable files (`.stl`, `.obj`, `.3mf`). It indexes chosen folders in the background,
