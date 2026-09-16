@@ -1,8 +1,9 @@
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import crypto from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { IpcChannels } from '@shared/ipc'
-import type { DeleteFileOptions, LibraryQuery } from '@shared/types'
+import type { DeleteFileOptions, DuplicateFileGroup, LibraryQuery, MeshFileRecord } from '@shared/types'
 import * as db from '../db/database'
 import { scanFolder, unwatchFolder, watchFolder } from '../indexer/indexer'
 import { enqueueThumbnailScan } from '../thumbnails/thumbnailManager'
@@ -29,6 +30,15 @@ async function runFolderScan(folderId: string, folderPath: string): Promise<void
   watchFolder(folderId, folderPath, handleLiveFolderChange)
   await scanFolder(folderId, folderPath, broadcastProgress, broadcastLibraryChanged)
   enqueueThumbnailScan()
+}
+
+async function hashFile(file: MeshFileRecord): Promise<string | null> {
+  try {
+    const content = await fs.readFile(file.path)
+    return crypto.createHash('sha256').update(content).digest('hex')
+  } catch {
+    return null
+  }
 }
 
 export function registerIpcHandlers(): void {
@@ -92,6 +102,32 @@ export function registerIpcHandlers(): void {
     }
     db.deleteFilesFromIndex(options.ids)
     broadcastLibraryChanged()
+  })
+
+  ipcMain.handle(IpcChannels.findDuplicates, async (): Promise<DuplicateFileGroup[]> => {
+    const candidates = db.listDuplicateCandidates()
+    const groupsBySize = new Map<number, MeshFileRecord[]>()
+    for (const file of candidates) {
+      const group = groupsBySize.get(file.sizeBytes) ?? []
+      group.push(file)
+      groupsBySize.set(file.sizeBytes, group)
+    }
+
+    const duplicates: DuplicateFileGroup[] = []
+    for (const files of groupsBySize.values()) {
+      const groupsByHash = new Map<string, MeshFileRecord[]>()
+      for (const file of files) {
+        const hash = await hashFile(file)
+        if (!hash) continue
+        const group = groupsByHash.get(hash) ?? []
+        group.push(file)
+        groupsByHash.set(hash, group)
+      }
+      for (const [hash, matchingFiles] of groupsByHash) {
+        if (matchingFiles.length > 1) duplicates.push({ hash, files: matchingFiles })
+      }
+    }
+    return duplicates
   })
 
   ipcMain.handle(IpcChannels.revealFile, (_e, id: string) => {

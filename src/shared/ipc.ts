@@ -10,6 +10,7 @@ export const IpcChannels = {
   getFiles: 'library:getFiles',
   getFile: 'library:getFile',
   deleteFiles: 'library:deleteFiles',
+  findDuplicates: 'library:findDuplicates',
   revealFile: 'library:revealFile',
   openInBambuStudio: 'library:openInBambuStudio',
   renameFile: 'library:renameFile',

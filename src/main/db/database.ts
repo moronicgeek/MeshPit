@@ -206,6 +206,18 @@ export function getFileById(id: string): MeshFileRecord | null {
   return rowToFile(row)
 }
 
+export function listDuplicateCandidates(): MeshFileRecord[] {
+  const rows = getDb()
+    .prepare(
+      `SELECT * FROM files
+       WHERE missing = 0 AND size_bytes IN (
+         SELECT size_bytes FROM files WHERE missing = 0 GROUP BY size_bytes HAVING COUNT(*) > 1
+       )`
+    )
+    .all() as any[]
+  return rows.map(rowToFile)
+}
+
 export function renameFile(id: string, newPath: string, newName: string): void {
   getDb().prepare('UPDATE files SET path = ?, name = ? WHERE id = ?').run(newPath, newName, id)
 }

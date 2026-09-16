@@ -202,6 +202,62 @@ input[type='search']:focus {
   justify-content: flex-end;
   gap: 8px;
 }
+.duplicate-modal {
+  width: min(680px, calc(100vw - 32px));
+}
+.duplicate-groups {
+  display: grid;
+  gap: 12px;
+  max-height: min(440px, 50vh);
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+.duplicate-group {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.duplicate-group-heading {
+  padding: 7px 10px;
+  background: var(--bg-3);
+  color: var(--text-2);
+  font-size: 11px;
+}
+.duplicate-file {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+}
+.duplicate-file:has(input:disabled) {
+  cursor: default;
+}
+.duplicate-file span {
+  min-width: 0;
+}
+.duplicate-file strong,
+.duplicate-file small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.duplicate-file strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+.duplicate-file small {
+  color: var(--text-2);
+  font-size: 10.5px;
+}
+.duplicate-file em {
+  color: var(--purple-0);
+  font-size: 10.5px;
+  font-style: normal;
+}
 
 /* ---------- Layout ---------- */
 

@@ -64,3 +64,8 @@ export interface DeleteFileOptions {
   ids: string[]
   alsoFromDisk: boolean
 }
+
+export interface DuplicateFileGroup {
+  hash: string
+  files: MeshFileRecord[]
+}

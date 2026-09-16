@@ -11,6 +11,8 @@ interface TopbarProps {
   onSortChange: (by: LibraryQuery['sortBy'], dir: LibraryQuery['sortDir']) => void
   onAddFolder: () => void
   onRescanAll: () => void
+  onFindDuplicates: () => void
+  findingDuplicates: boolean
   resultCount: number
   searchInputRef?: Ref<HTMLInputElement>
 }
@@ -31,6 +33,8 @@ export function Topbar({
   onSortChange,
   onAddFolder,
   onRescanAll,
+  onFindDuplicates,
+  findingDuplicates,
   resultCount,
   searchInputRef
 }: TopbarProps): JSX.Element {
@@ -66,6 +70,9 @@ export function Topbar({
         </select>
         <button className="btn" onClick={onRescanAll}>
           ⟳ Rescan All
+        </button>
+        <button className="btn" disabled={findingDuplicates} onClick={onFindDuplicates}>
+          {findingDuplicates ? 'Finding Duplicates...' : 'Find Duplicates'}
         </button>
         <button className="btn primary" onClick={onAddFolder}>
           + Add Folder

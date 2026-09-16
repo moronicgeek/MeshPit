@@ -29,6 +29,8 @@ const api = {
     ipcRenderer.invoke(IpcChannels.getFile, id),
   deleteFiles: (options: DeleteFileOptions): Promise<void> =>
     ipcRenderer.invoke(IpcChannels.deleteFiles, options),
+  findDuplicates: (): Promise<import('../shared/types').DuplicateFileGroup[]> =>
+    ipcRenderer.invoke(IpcChannels.findDuplicates),
   revealFile: (id: string): Promise<void> => ipcRenderer.invoke(IpcChannels.revealFile, id),
   openInBambuStudio: (id: string): Promise<void> =>
     ipcRenderer.invoke(IpcChannels.openInBambuStudio, id),

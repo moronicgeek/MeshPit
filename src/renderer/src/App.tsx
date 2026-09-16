@@ -3,10 +3,12 @@ import { Sidebar } from './components/Sidebar'
 import { Topbar } from './components/Topbar'
 import { Gallery } from './components/Gallery'
 import { DetailsDrawer } from './components/DetailsDrawer'
+import { DuplicateModal } from './components/DuplicateModal'
 import { SettingsModal } from './components/SettingsModal'
 import { PromptModal } from './components/PromptModal'
 import { useLibrary } from './hooks/useLibrary'
 import appIcon from '../../../resources/icon.svg'
+import type { DuplicateFileGroup } from '../../shared/types'
 
 export default function App(): JSX.Element {
   const lib = useLibrary()
@@ -31,6 +33,8 @@ export default function App(): JSX.Element {
   const [renameFileTarget, setRenameFileTarget] = useState<{ id: string; baseName: string } | null>(
     null
   )
+  const [duplicateGroups, setDuplicateGroups] = useState<DuplicateFileGroup[] | null>(null)
+  const [findingDuplicates, setFindingDuplicates] = useState(false)
 
   const selectedFiles = useMemo(
     () => lib.files.filter((f) => selectedIds.has(f.id)),
@@ -108,6 +112,17 @@ export default function App(): JSX.Element {
     }
   }
 
+  const handleFindDuplicates = async (): Promise<void> => {
+    setFindingDuplicates(true)
+    try {
+      setDuplicateGroups(await window.meshpit.findDuplicates())
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Failed to find duplicate files')
+    } finally {
+      setFindingDuplicates(false)
+    }
+  }
+
   useEffect(() => {
     const handleSearchShortcut = (e: KeyboardEvent): void => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
@@ -133,7 +148,8 @@ export default function App(): JSX.Element {
         deleteCollectionConfirm ||
         deleteTagConfirm ||
         renameCollectionTarget ||
-        renameFileTarget
+        renameFileTarget ||
+        duplicateGroups
       )
         return
 
@@ -194,7 +210,8 @@ export default function App(): JSX.Element {
     deleteCollectionConfirm,
     deleteTagConfirm,
     renameCollectionTarget,
-    renameFileTarget
+    renameFileTarget,
+    duplicateGroups
   ])
 
   useEffect(() => {
@@ -292,6 +309,8 @@ export default function App(): JSX.Element {
           onSortChange={lib.setSort}
           onAddFolder={lib.addFolder}
           onRescanAll={lib.rescanAll}
+          onFindDuplicates={() => void handleFindDuplicates()}
+          findingDuplicates={findingDuplicates}
           resultCount={lib.files.length}
           searchInputRef={searchInputRef}
         />
@@ -322,6 +341,17 @@ export default function App(): JSX.Element {
       )}
 
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+
+      {duplicateGroups && (
+        <DuplicateModal
+          groups={duplicateGroups}
+          onClose={() => setDuplicateGroups(null)}
+          onDelete={(ids) => {
+            setDuplicateGroups(null)
+            handleDeleteRequest(ids, true)
+          }}
+        />
+      )}
 
       {collectionPromptOpen && (
         <PromptModal
