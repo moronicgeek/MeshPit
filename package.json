@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "MeshPit — a cross-platform library manager for STL, OBJ, 3MF and STEP 3D-printable files",
   "main": "./out/main/index.js",
-  "author": "MeshPit",
+  "author": "MeshPit <meshpit@meshpit.com>",
   "private": true,
   "scripts": {
     "dev": "electron-vite dev",
