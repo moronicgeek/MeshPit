@@ -6,6 +6,7 @@ import { DetailsDrawer } from './components/DetailsDrawer'
 import { SettingsModal } from './components/SettingsModal'
 import { PromptModal } from './components/PromptModal'
 import { useLibrary } from './hooks/useLibrary'
+import appIcon from '../../../resources/icon.svg'
 
 export default function App(): JSX.Element {
   const lib = useLibrary()
@@ -248,6 +249,10 @@ export default function App(): JSX.Element {
 
   return (
     <div className="app-shell">
+      <div className="window-brand">
+        <img src={appIcon} alt="" />
+        <span>MeshPit</span>
+      </div>
       <Sidebar
         folders={lib.folders}
         collections={lib.collections}

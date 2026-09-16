@@ -52,11 +52,6 @@ export function Sidebar({
 
   return (
     <aside className="sidebar">
-      <div className="brand">
-        <span className="brand-mark">◆</span>
-        <span className="brand-name">MeshPit</span>
-      </div>
-
       <button
         className={`nav-item ${activeView.type === 'all' ? 'active' : ''}`}
         onClick={() => onSelectView({ type: 'all' })}

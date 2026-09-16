@@ -13,7 +13,7 @@ export function FileCard({ file, selected, onSelect, onOpenInBambu }: FileCardPr
 
   return (
     <div
-      className={`file-card ${selected ? 'selected' : ''}`}
+      className={`file-card ext-${file.ext} ${selected ? 'selected' : ''}`}
       data-file-id={file.id}
       onClick={(e) => onSelect(file.id, { shift: e.shiftKey, meta: e.metaKey || e.ctrlKey })}
       onDoubleClick={() => onOpenInBambu(file.id)}
@@ -27,7 +27,7 @@ export function FileCard({ file, selected, onSelect, onOpenInBambu }: FileCardPr
             {file.thumbnailStatus === 'pending' && <div className="spinner" />}
           </div>
         )}
-        <span className="badge ext-badge">{file.ext}</span>
+        <span className={`badge ext-badge ext-badge-${file.ext}`}>{file.ext}</span>
       </div>
       <div className="file-meta">
         <div className="file-name" title={file.name}>
