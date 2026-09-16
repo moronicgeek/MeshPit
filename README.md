@@ -200,3 +200,11 @@ Delete that folder and you're back to a clean install — your files stay exactl
 - **three.js** — offscreen thumbnail rendering
 - **occt-import-js** — STEP triangulation
 - **chokidar** + Node `worker_threads` — live watching and background scanning
+
+
+## CAVEATS
+
+Since I dont have an apple developer account you can run the following command on your command line to open the application: 
+```
+xattr -dr com.apple.quarantine /Applications/MeshPit.app 
+```
