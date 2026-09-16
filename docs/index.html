@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="MeshPit is a desktop library for organizing and previewing 3D-printable files."
+    />
+    <title>MeshPit | Your 3D Print Library</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #21162a;
+        --muted: #6c6171;
+        --cream: #fffaf1;
+        --paper: #fffdf8;
+        --violet: #442761;
+        --yellow: #ffd166;
+        --coral: #ef7a4a;
+        --rose: #c03a63;
+        --line: #ded5ca;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: var(--cream);
+        font-family: Outfit, sans-serif;
+      }
+      a { color: inherit; text-decoration: none; }
+      .wrap { width: min(1120px, calc(100% - 40px)); margin: auto; }
+
+      .nav {
+        height: 76px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .wordmark, .logo-lockup { display: flex; align-items: center; gap: 10px; }
+      .wordmark img { width: 31px; height: 31px; }
+      .wordmark strong { font-size: 20px; letter-spacing: 0; }
+      .nav-links { display: flex; gap: 24px; font-size: 14px; font-weight: 500; }
+      .nav-links a:hover { color: var(--rose); }
+
+      .hero {
+        min-height: 640px;
+        padding: 78px 0 56px;
+        border-top: 1px solid var(--line);
+        background-color: var(--paper);
+      }
+      .hero-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 64px; }
+      .eyebrow, .platforms, .kicker {
+        font-family: 'DM Mono', monospace;
+        font-size: 12px;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+      .eyebrow { color: var(--rose); font-weight: 500; }
+      h1 { max-width: 650px; margin: 14px 0 20px; font-size: clamp(48px, 6vw, 78px); line-height: .96; letter-spacing: 0; }
+      .hero-copy { max-width: 515px; color: var(--muted); font-size: 19px; line-height: 1.5; }
+      .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+      .button {
+        display: inline-flex; align-items: center; justify-content: center; min-height: 46px;
+        padding: 0 19px; border: 1px solid var(--ink); font-size: 15px; font-weight: 600;
+        transition: transform .2s ease, background-color .2s ease;
+      }
+      .button:hover { transform: translateY(-2px); }
+      .button.primary { background: var(--violet); color: white; border-color: var(--violet); }
+      .button.secondary { background: var(--paper); }
+      .platforms { margin: 16px 0 0; color: var(--muted); }
+
+      .cube-stage { position: relative; min-height: 390px; display: grid; place-items: center; }
+      .cube-stage::before { content: ''; position: absolute; width: 340px; height: 340px; background: var(--yellow); transform: rotate(10deg); }
+      .cube-stage::after { content: ''; position: absolute; width: 270px; height: 270px; border: 2px solid var(--violet); transform: rotate(-9deg); }
+      .hero-icon { position: relative; z-index: 1; width: min(290px, 70vw); filter: drop-shadow(19px 22px 0 rgba(33,22,42,.16)); }
+
+      .features { padding: 96px 0; }
+      .section-title { max-width: 600px; margin: 0 0 46px; font-size: clamp(34px, 4vw, 50px); line-height: 1; }
+      .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); }
+      .feature { min-height: 245px; padding: 28px; background: var(--paper); border-right: 1px solid var(--line); }
+      .feature:last-child { border-right: 0; }
+      .feature-index { color: var(--rose); }
+      .feature h3 { margin: 45px 0 10px; font-size: 22px; }
+      .feature p { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.5; }
+
+      .format-band { padding: 56px 0; background: var(--violet); color: white; }
+      .format-grid { display: grid; grid-template-columns: 1fr auto; gap: 36px; align-items: center; }
+      .format-band h2 { max-width: 560px; margin: 10px 0 0; font-size: clamp(30px, 4vw, 46px); line-height: 1.05; }
+      .formats { display: flex; flex-wrap: wrap; justify-content: end; gap: 8px; }
+      .formats span { padding: 8px 11px; border: 1px solid rgba(255,255,255,.45); font-family: 'DM Mono', monospace; font-size: 13px; }
+
+      .download { padding: 95px 0; text-align: center; }
+      .download .logo-lockup { justify-content: center; gap: 13px; }
+      .download img { width: 44px; height: 44px; }
+      .download h2 { margin: 22px 0 13px; font-size: clamp(37px, 5vw, 60px); line-height: 1; }
+      .download p { max-width: 470px; margin: 0 auto 27px; color: var(--muted); font-size: 17px; line-height: 1.5; }
+      footer { padding: 26px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+      footer .wrap { display: flex; justify-content: space-between; gap: 20px; }
+
+      @media (max-width: 760px) {
+        .nav-links { display: none; }
+        .hero { min-height: auto; padding-top: 58px; }
+        .hero-grid, .format-grid { grid-template-columns: 1fr; gap: 38px; }
+        .cube-stage { min-height: 275px; }
+        .cube-stage::before { width: 230px; height: 230px; }
+        .cube-stage::after { width: 185px; height: 185px; }
+        .hero-icon { width: 210px; }
+        .features { padding: 70px 0; }
+        .feature-grid { grid-template-columns: 1fr; }
+        .feature { min-height: 190px; border-right: 0; border-bottom: 1px solid var(--line); }
+        .feature:last-child { border-bottom: 0; }
+        .feature h3 { margin-top: 28px; }
+        .formats { justify-content: start; }
+        footer .wrap { flex-direction: column; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="wrap nav">
+      <a class="wordmark" href="#top" aria-label="MeshPit home">
+        <img src="https://raw.githubusercontent.com/moronicgeek/MeshPit/main/resources/icon.svg" alt="" />
+        <strong>MeshPit</strong>
+      </a>
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="#features">Features</a>
+        <a href="#download">Download</a>
+        <a href="https://github.com/moronicgeek/MeshPit">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="wrap hero-grid">
+          <div>
+            <div class="eyebrow">Desktop library for 3D printing</div>
+            <h1>Find the right model. Fast.</h1>
+            <p class="hero-copy">MeshPit keeps your printable models in one searchable, visual library. Index folders, preview geometry, and open files in Bambu Studio without leaving your flow.</p>
+            <div class="actions">
+              <a class="button primary" href="https://github.com/moronicgeek/MeshPit/releases">Download MeshPit</a>
+              <a class="button secondary" href="https://github.com/moronicgeek/MeshPit">View on GitHub</a>
+            </div>
+            <p class="platforms">macOS · Windows · Linux</p>
+          </div>
+          <div class="cube-stage" aria-hidden="true">
+            <img class="hero-icon" src="https://raw.githubusercontent.com/moronicgeek/MeshPit/main/resources/icon.svg" alt="" />
+          </div>
+        </div>
+      </section>
+
+      <section class="features" id="features">
+        <div class="wrap">
+          <div class="kicker">A focused library, not another slicer</div>
+          <h2 class="section-title">Everything you need to keep a growing model collection usable.</h2>
+          <div class="feature-grid">
+            <article class="feature">
+              <div class="feature-index">01 / INDEX</div>
+              <h3>Searchable gallery</h3>
+              <p>Index chosen folders in the background and scan a grid of generated 3D previews instead of filenames alone.</p>
+            </article>
+            <article class="feature">
+              <div class="feature-index">02 / ORGANIZE</div>
+              <h3>Tags and collections</h3>
+              <p>Group parts the way you think, then filter by tag, folder, or collection when it is time to print.</p>
+            </article>
+            <article class="feature">
+              <div class="feature-index">03 / MAKE</div>
+              <h3>Print-ready handoff</h3>
+              <p>Open a selected model in Bambu Studio directly from its details panel, with its original file right where it belongs.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="format-band">
+        <div class="wrap format-grid">
+          <div>
+            <div class="kicker">Previewable formats</div>
+            <h2>Mesh files and CAD files, shown as models rather than mysteries.</h2>
+          </div>
+          <div class="formats" aria-label="Supported file formats">
+            <span>STL</span><span>OBJ</span><span>3MF</span><span>STEP</span><span>STP</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="download" id="download">
+        <div class="wrap">
+          <div class="logo-lockup"><img src="https://raw.githubusercontent.com/moronicgeek/MeshPit/main/resources/icon.svg" alt="" /><strong>MeshPit</strong></div>
+          <h2>Start digging through your library.</h2>
+          <p>Download the latest release for your platform, choose a folder, and let MeshPit build your visual index.</p>
+          <a class="button primary" href="https://github.com/moronicgeek/MeshPit/releases">Get the latest release</a>
+        </div>
+      </section>
+    </main>
+
+    <footer><div class="wrap"><span>MeshPit · A desktop library for printable models</span><a href="https://github.com/moronicgeek/MeshPit">Source code</a></div></footer>
+  </body>
+</html>

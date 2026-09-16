@@ -485,6 +485,11 @@ input[type='search']:focus {
   border-color: #b95776;
   color: #ffe1e9;
 }
+.ext-badge-step {
+  background: #285d42;
+  border-color: #4e9b70;
+  color: #def8e7;
+}
 .file-card.ext-stl .thumb-fallback {
   color: #79d8e6;
 }
@@ -493,6 +498,9 @@ input[type='search']:focus {
 }
 .file-card.ext-3mf .thumb-fallback {
   color: #ef9eb6;
+}
+.file-card.ext-step .thumb-fallback {
+  color: #8bd5a5;
 }
 .spinner {
   width: 14px;

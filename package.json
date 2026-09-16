@@ -1,7 +1,7 @@
 {
   "name": "meshpit",
   "version": "0.1.0",
-  "description": "MeshPit — a cross-platform library manager for STL, OBJ and 3MF 3D-printable files",
+  "description": "MeshPit — a cross-platform library manager for STL, OBJ, 3MF and STEP 3D-printable files",
   "main": "./out/main/index.js",
   "author": "MeshPit",
   "private": true,
@@ -20,6 +20,7 @@
     "chokidar": "^3.6.0",
     "fflate": "^0.8.3",
     "nanoid": "^5.0.7",
+    "occt-import-js": "^0.0.23",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "three": "^0.166.1"

@@ -1,4 +1,4 @@
-export type MeshFileType = 'stl' | 'obj' | '3mf'
+export type MeshFileType = 'stl' | 'obj' | '3mf' | 'step'
 
 export interface MeshFileRecord {
   id: string

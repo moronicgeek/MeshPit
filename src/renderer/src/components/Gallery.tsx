@@ -23,7 +23,7 @@ export function Gallery({
     return (
       <div className="gallery-empty">
         <p>No files here yet.</p>
-        <p className="hint">Add a folder from the sidebar to start indexing STL, OBJ and 3MF files.</p>
+        <p className="hint">Add a folder from the sidebar to start indexing STL, OBJ, 3MF and STEP files.</p>
       </div>
     )
   }

@@ -3,6 +3,8 @@ import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js'
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
 import { ThreeMFLoader } from 'three/examples/jsm/loaders/3MFLoader.js'
 import * as fflate from 'fflate'
+import occtimportjs from 'occt-import-js'
+import occtWasmUrl from 'occt-import-js/dist/occt-import-js.wasm?url'
 
 declare global {
   interface Window {
@@ -44,6 +46,7 @@ const material = new THREE.MeshStandardMaterial({
 const stlLoader = new STLLoader()
 const objLoader = new OBJLoader()
 const threeMfLoader = new ThreeMFLoader()
+const occtImporter = occtimportjs({ locateFile: () => occtWasmUrl })
 
 let currentMesh: THREE.Object3D | null = null
 
@@ -152,6 +155,33 @@ async function buildObjectFromGeometry(ext: string, buffer: ArrayBuffer): Promis
         }
       }
     })
+    return group
+  }
+  if (ext === 'step') {
+    const result = (await occtImporter).ReadStepFile(new Uint8Array(buffer), {
+      linearUnit: 'millimeter',
+      linearDeflectionType: 'bounding_box_ratio',
+      linearDeflection: 0.001,
+      angularDeflection: 0.5
+    })
+    if (!result.success || result.meshes.length === 0) throw new Error('Could not triangulate STEP file')
+
+    const group = new THREE.Group()
+    for (const mesh of result.meshes) {
+      const geometry = new THREE.BufferGeometry()
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(mesh.attributes.position.array, 3))
+      if (mesh.attributes.normal) {
+        geometry.setAttribute('normal', new THREE.Float32BufferAttribute(mesh.attributes.normal.array, 3))
+      } else {
+        geometry.computeVertexNormals()
+      }
+      geometry.setIndex(mesh.index.array)
+      const meshMaterial = mesh.color
+        ? material.clone()
+        : material
+      if (mesh.color) meshMaterial.color.setRGB(mesh.color[0], mesh.color[1], mesh.color[2])
+      group.add(new THREE.Mesh(geometry, meshMaterial))
+    }
     return group
   }
   throw new Error(`Unsupported extension: ${ext}`)

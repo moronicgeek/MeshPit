@@ -4,13 +4,13 @@ import path from 'node:path'
 import os from 'node:os'
 
 // Runs in a worker thread so directory walking never blocks the UI or main process.
-const EXTENSIONS = new Set(['.stl', '.obj', '.3mf'])
+const EXTENSIONS = new Set(['.stl', '.obj', '.3mf', '.step', '.stp'])
 const BATCH_SIZE = 50
 
 interface ScanEntry {
   path: string
   name: string
-  ext: 'stl' | 'obj' | '3mf'
+  ext: 'stl' | 'obj' | '3mf' | 'step'
   sizeBytes: number
   mtimeMs: number
 }
@@ -69,7 +69,7 @@ async function walk(
         batch.push({
           path: fullPath,
           name: entry.name,
-          ext: ext.slice(1) as ScanEntry['ext'],
+          ext: ext === '.stp' ? 'step' : (ext.slice(1) as ScanEntry['ext']),
           sizeBytes: stat.size,
           mtimeMs: stat.mtimeMs
         })
